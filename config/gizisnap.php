@@ -19,7 +19,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | fake = true membuat aplikasi memakai jawaban contoh tanpa memanggil
-    | OpenAI. Pakai ini selama pengembangan, tes, dan CI agar saldo hemat.
+    | penyedia AI. Hanya untuk pengembangan dan tes. Saat produksi, nilai ini
+    | dipaksa false oleh AppServiceProvider supaya jawaban tiruan tidak pernah
+    | sampai ke pengguna.
     |
     */
 

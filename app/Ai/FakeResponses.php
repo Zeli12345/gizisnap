@@ -3,8 +3,8 @@
 namespace App\Ai;
 
 /**
- * Jawaban contoh untuk mode tiruan (AI_FAKE=true).
- * Dipakai frontend, tester, dan CI agar tidak menghabiskan saldo API.
+ * Jawaban contoh untuk mode tiruan (AI_FAKE=true). Hanya dipakai saat
+ * pengembangan dan tes; di produksi `gizisnap.ai.fake` dipaksa false.
  *
  * - Nama berkas berisi "bukan-makanan" -> foto dianggap bukan makanan.
  * - Nama berkas berisi "error"         -> panggilan AI dianggap gagal.

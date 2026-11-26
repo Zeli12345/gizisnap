@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
+use App\Models\HealthProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -12,34 +13,40 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'google_id' => (string) fake()->unique()->numberBetween(100000000, 999999999),
+            'role' => Role::User,
+            'onboarded_at' => null,
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(fn () => ['role' => Role::Admin]);
+    }
+
+    /**
+     * Pengguna yang sudah mengisi profil dan punya target harian.
+     */
+    public function onboarded(array $profile = []): static
+    {
+        return $this->state(fn () => ['onboarded_at' => now()])
+            ->afterCreating(function (User $user) use ($profile) {
+                HealthProfile::factory()->for($user)->create($profile);
+                $user->dailyTargets()->create([
+                    'calories_kcal' => 2000,
+                    'protein_g' => 100,
+                    'carbs_g' => 275,
+                    'fat_g' => 55.6,
+                    'water_ml' => 2000,
+                    'source' => 'auto',
+                    'effective_from' => today()->subDays(30),
+                ]);
+            });
     }
 }
