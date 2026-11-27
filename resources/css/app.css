@@ -1,9 +1,917 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/fraunces/opsz.css';
+@import '@fontsource-variable/fraunces/opsz-italic.css';
+@import '@fontsource-variable/instrument-sans';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views';
+@source '../js';
+
+/*
+| GiziSnap — "Dapur malam".
+|
+| Batu tulis hangat yang sedikit kehijauan, seperti meja dapur di malam hari,
+| dengan satu aksen kunyit. Sistem ini punya empat lapisan:
+|
+|   1. Warna   — canvas > paper > sunk > raise. Kedalaman lewat terang permukaan.
+|   2. Tipe    — Fraunces (optical size) untuk judul dan angka, Instrument Sans untuk antarmuka.
+|   3. Gerak   — satu bahasa: keluar cepat, masuk pelan, tekan memantul.
+|   4. Bentuk  — penggaris. Semua ukuran gizi dibaca seperti mengukur porsi.
+|
+| Aturan:
+|   - Satu aksen untuk tindakan (sun). Hijau hanya untuk merek dan "tersimpan".
+|   - Bayangan hanya untuk yang melayang (.float).
+|   - Cahaya latar sangat tipis dan tidak pernah di belakang teks kecil.
+|   - Semua gerak mati total saat prefers-reduced-motion.
+|
+| Skala:
+|   radius  5 (tanda) / 8 (kontrol) / 14 (permukaan) / 22 (panggung)
+|   gerak   140 ms hover / 240 ms buka-tutup / 700 ms masuk
+*/
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Fraunces Variable', Georgia, ui-serif, serif;
+
+    --color-canvas: #10120f;
+    --color-paper: #171a15;
+    --color-sunk: #1f231d;
+    --color-raise: #272c24;
+    --color-line: #2c312a;
+    --color-line-strong: #5c655a;
+
+    --color-ink: #f3f0e6;
+    --color-ink-2: #bcc1b4;
+    --color-ink-3: #8f9688;
+
+    --color-pine: #63ad80;
+    --color-pine-deep: #4c8f66;
+    --color-pine-tint: #1b2b21;
+
+    --color-sun: #f0b04e;
+    --color-sun-deep: #d99633;
+    --color-sun-tint: #2e2617;
+    --color-sun-ink: #f6cd85;
+
+    --color-protein: #74c3d8;
+    --color-carbs: #f0a167;
+    --color-fat: #c79ac6;
+    --color-water: #79aeeb;
+    --color-danger: #f08a76;
+    --color-danger-tint: #2f1b18;
+    --color-warn: #f6cd85;
+
+    --radius-mark: 5px;
+    --radius-control: 8px;
+    --radius-surface: 14px;
+    --radius-stage: 22px;
+
+    --ease-smooth: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: linear(
+        0,
+        0.009,
+        0.035 2.1%,
+        0.141,
+        0.281 6.7%,
+        0.723 12.9%,
+        0.938 16.7%,
+        1.017,
+        1.077,
+        1.121,
+        1.149 24.3%,
+        1.159,
+        1.163,
+        1.161,
+        1.154 29.9%,
+        1.129 32.8%,
+        1.051 39.6%,
+        1.017 43.1%,
+        0.991,
+        0.977 51%,
+        0.974 53.8%,
+        0.975 57.1%,
+        0.997 69.8%,
+        1.003 76.9%,
+        1.004 83.8%,
+        1
+    );
+}
+
+/* ================================================================
+   Perpindahan halaman
+   Menu samping dan bilah bawah diberi nama supaya tetap diam; hanya
+   isi halaman yang bergeser. Penanda menu aktif berpindah mulus.
+   ================================================================ */
+
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root) {
+    animation: vt-out 110ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+    animation: vt-in 260ms cubic-bezier(0.22, 0.61, 0.36, 1) 60ms both;
+}
+
+::view-transition-group(nav-pill) {
+    animation-duration: 340ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-group(sidebar),
+::view-transition-group(bottomnav),
+::view-transition-group(topbar) {
+    animation-duration: 0s;
+}
+
+@keyframes vt-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes vt-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: dark;
+        background: var(--color-canvas);
+        -webkit-tap-highlight-color: transparent;
+        scroll-behavior: smooth;
+        scroll-padding-top: 5rem;
+    }
+
+    body {
+        @apply font-sans text-[15px] leading-[1.55] text-ink antialiased;
+        font-optical-sizing: auto;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Cahaya latar: kunyit dari kanan atas, daun dari kiri bawah. Sangat tipis. */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(1000px 560px at 88% -14%, rgb(240 176 78 / 0.075), transparent 62%),
+            radial-gradient(760px 560px at -10% 110%, rgb(99 173 128 / 0.055), transparent 60%);
+    }
+
+    /* Butiran halus supaya permukaan gelap tidak terasa seperti plastik. */
+    body::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        pointer-events: none;
+        opacity: 0.045;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .font-display {
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-sun;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type='number'] {
+        -moz-appearance: textfield;
+    }
+
+    input[type='date'],
+    input[type='time'] {
+        color-scheme: dark;
+    }
+
+    ::selection {
+        background: var(--color-sun);
+        color: var(--color-canvas);
+    }
+
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-line-strong) transparent;
+    }
+}
+
+@layer components {
+    .num {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum' 1;
+    }
+
+    /* ---------- Permukaan ---------- */
+
+    /* Setiap permukaan "disinari" dari atas: garis terang tipis di tepi atas. */
+    .panel {
+        @apply rounded-surface border border-ink/8 bg-paper;
+        box-shadow: inset 0 1px 0 rgb(243 240 230 / 0.045);
+    }
+
+    .panel-pad {
+        @apply p-5 sm:p-6;
+    }
+
+    .float {
+        @apply rounded-surface border border-ink/12 bg-raise;
+        box-shadow:
+            inset 0 1px 0 rgb(243 240 230 / 0.06),
+            0 24px 48px -18px rgb(0 0 0 / 0.75);
+    }
+
+    a.panel,
+    button.panel,
+    .panel-tap {
+        transition:
+            border-color 140ms var(--ease-smooth),
+            background-color 140ms var(--ease-smooth),
+            transform 420ms var(--ease-spring);
+    }
+
+    a.panel:hover,
+    button.panel:hover,
+    .panel-tap:hover {
+        @apply border-ink/16 bg-raise;
+        transform: translateY(-1px);
+    }
+
+    a.panel:active,
+    .panel-tap:active {
+        transform: translateY(0) scale(0.995);
+        transition-duration: 80ms;
+    }
+
+    /* ---------- Tipografi ---------- */
+
+    .display {
+        @apply font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.024em] sm:text-[44px];
+    }
+
+    .display-xl {
+        @apply font-display text-[46px] leading-[0.95] font-semibold tracking-[-0.032em] sm:text-[66px] lg:text-[78px];
+    }
+
+    .title {
+        @apply font-display text-[20px] leading-[1.15] font-semibold tracking-[-0.014em] sm:text-[22px];
+    }
+
+    .eyebrow {
+        @apply text-[11.5px] font-semibold tracking-[0.07em] text-ink-3 uppercase;
+    }
+
+    .figure {
+        @apply font-display leading-[0.9] font-semibold tracking-[-0.035em];
+    }
+
+    /* Kata miring Fraunces: satu kata saja per judul, sebagai penekanan. */
+    .em {
+        @apply font-display font-normal italic;
+        font-variation-settings: 'opsz' 144;
+        letter-spacing: -0.02em;
+    }
+
+    /* ---------- Kontrol ---------- */
+
+    .field {
+        @apply block w-full rounded-control border border-ink/12 bg-sunk px-3.5 py-2.5 text-[15px] text-ink transition-[border-color,box-shadow,background-color] duration-140 ease-smooth placeholder:text-ink-3/70 hover:border-ink/20 focus:border-sun/70 focus:bg-paper focus:ring-3 focus:ring-sun/12 focus:outline-none disabled:opacity-50;
+    }
+
+    .field[aria-invalid='true'] {
+        @apply border-danger/70;
+    }
+
+    .field-sm {
+        @apply rounded-[6px] px-3 py-2 text-[14px];
+    }
+
+    select.field {
+        @apply appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23b8bdb0'%20stroke-width='2'%3E%3Cpath%20d='m6%209%206%206%206-6'/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10;
+    }
+
+    .label {
+        @apply mb-1.5 block text-[13px] font-semibold text-ink-2;
+    }
+
+    .hint {
+        @apply mt-1.5 text-[12.5px] leading-relaxed text-ink-3;
+    }
+
+    .error-text {
+        @apply mt-1.5 text-[12.5px] font-semibold text-danger;
+    }
+
+    /* ---------- Tombol ---------- */
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-control px-4 py-2.5 text-[14.5px] font-semibold select-none disabled:pointer-events-none disabled:opacity-35;
+        transition:
+            background-color 140ms var(--ease-smooth),
+            border-color 140ms var(--ease-smooth),
+            color 140ms var(--ease-smooth),
+            transform 420ms var(--ease-spring);
+    }
+
+    .btn:active {
+        transform: scale(0.965);
+        transition-duration: 70ms;
+    }
+
+    .btn-primary {
+        @apply bg-sun text-canvas hover:bg-[#f6bc62];
+        box-shadow:
+            inset 0 1px 0 rgb(255 255 255 / 0.4),
+            inset 0 -1px 0 rgb(0 0 0 / 0.14);
+    }
+
+    .btn-primary:disabled {
+        @apply bg-sunk text-ink-3 opacity-100;
+        box-shadow: none;
+    }
+
+    .btn-quiet {
+        @apply border border-ink/12 bg-transparent text-ink hover:border-ink/24 hover:bg-sunk;
+    }
+
+    .btn-ghost {
+        @apply text-ink-2 hover:bg-sunk hover:text-ink;
+    }
+
+    .btn-danger {
+        @apply border border-danger/25 bg-danger-tint text-danger hover:border-danger/45;
+    }
+
+    .btn-danger-solid {
+        @apply bg-danger text-canvas hover:bg-[#e07863];
+    }
+
+    .btn-sm {
+        @apply gap-1.5 rounded-[6px] px-3 py-1.5 text-[13px];
+    }
+
+    .link {
+        @apply font-semibold text-sun underline decoration-sun/30 decoration-[1.5px] underline-offset-[3px] transition-colors duration-140 hover:decoration-sun;
+    }
+
+    /* ---------- Penggeser ---------- */
+
+    /* Isi kunyit sampai posisi jempol lewat --p, yang diisi dari Alpine. */
+    .range {
+        @apply h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none;
+    }
+
+    .range::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 99px;
+        background: linear-gradient(to right, var(--color-sun) var(--p, 50%), rgb(243 240 230 / 0.12) var(--p, 50%));
+    }
+
+    .range::-moz-range-track {
+        height: 4px;
+        border-radius: 99px;
+        background: rgb(243 240 230 / 0.12);
+    }
+
+    .range::-moz-range-progress {
+        height: 4px;
+        border-radius: 99px;
+        background: var(--color-sun);
+    }
+
+    .range::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        margin-top: -8px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        border: 0;
+        box-shadow:
+            0 0 0 4px rgb(240 176 78 / 0.9),
+            0 4px 10px rgb(0 0 0 / 0.5);
+        transition:
+            transform 420ms var(--ease-spring),
+            box-shadow 140ms;
+    }
+
+    .range::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--color-ink);
+        border: 4px solid var(--color-sun);
+        transition: transform 420ms var(--ease-spring);
+    }
+
+    .range:hover::-webkit-slider-thumb {
+        transform: scale(1.12);
+    }
+
+    .range:active::-webkit-slider-thumb {
+        transform: scale(1.3);
+    }
+
+    .range:focus-visible::-webkit-slider-thumb {
+        box-shadow:
+            0 0 0 4px var(--color-sun),
+            0 0 0 8px rgb(240 176 78 / 0.3);
+    }
+
+    /* Pilihan satu dari beberapa: tanpa kotak, hanya garis bawah yang bergeser. */
+    .chip {
+        @apply rounded-full border border-ink/12 px-3.5 py-1.5 text-[13px] font-semibold text-ink-2 transition-[border-color,background-color,color,transform] duration-140 ease-smooth hover:border-ink/24 hover:text-ink;
+    }
+
+    .chip[aria-pressed='true'] {
+        @apply border-sun bg-sun text-canvas;
+    }
+
+    .chip:active {
+        transform: scale(0.95);
+    }
+
+    /* ---------- Label kecil ---------- */
+
+    .pill {
+        @apply inline-flex items-center gap-1.5 rounded-[5px] border border-ink/8 bg-sunk px-2 py-0.5 text-[12px] font-medium text-ink-2;
+    }
+
+    .seg {
+        @apply relative inline-flex gap-0.5 rounded-[8px] border border-ink/8 bg-sunk p-0.5;
+    }
+
+    .seg a,
+    .seg button {
+        @apply rounded-[6px] px-3 py-1.5 text-[13px] font-semibold text-ink-3 transition-colors duration-140 ease-smooth hover:text-ink;
+    }
+
+    .seg [aria-current='page'],
+    .seg [aria-pressed='true'] {
+        @apply bg-raise text-ink;
+        box-shadow: inset 0 0 0 1px rgb(243 240 230 / 0.09);
+    }
+
+    /* ---------- Tabel ---------- */
+
+    .table {
+        @apply w-full text-left text-[14px];
+    }
+
+    .table-scroll {
+        @apply overflow-x-auto;
+    }
+
+    .table thead th {
+        @apply border-b border-ink/8 px-5 py-2.5 text-[11.5px] font-semibold whitespace-nowrap text-ink-3;
+    }
+
+    .table tbody td {
+        @apply border-b border-ink/6 px-5 py-3 align-middle;
+    }
+
+    .table tbody tr {
+        @apply transition-colors duration-140;
+    }
+
+    .table tbody tr:hover {
+        @apply bg-raise/60;
+    }
+
+    .table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    /* ---------- Isi chat ---------- */
+
+    .prose-chat p + p,
+    .prose-chat p + ul,
+    .prose-chat ul + p,
+    .prose-chat p + ol,
+    .prose-chat ol + p {
+        @apply mt-2.5;
+    }
+
+    .prose-chat ul {
+        @apply list-disc pl-5;
+    }
+
+    .prose-chat ol {
+        @apply list-decimal pl-5;
+    }
+
+    .prose-chat li + li {
+        @apply mt-1;
+    }
+
+    .prose-chat strong {
+        @apply font-bold text-ink;
+    }
+
+    /* ---------- Penggaris ---------- */
+
+    /* Satu goresan penggaris. Yang kelipatan lima lebih tinggi, seperti mistar. */
+    .tick {
+        transform-origin: bottom;
+        animation: tick-in 560ms var(--ease-expo) both;
+        animation-delay: calc(120ms + var(--i, 0) * 14ms);
+    }
+
+    .tick.on {
+        animation:
+            tick-in 560ms var(--ease-expo) both,
+            tick-on 640ms ease-out both;
+        animation-delay: calc(120ms + var(--i, 0) * 14ms), calc(520ms + var(--i, 0) * 20ms);
+    }
+
+    /* ---------- Penampil bidik ---------- */
+
+    .corner {
+        @apply pointer-events-none absolute size-6 border-sun;
+        transition:
+            inset 420ms var(--ease-spring),
+            opacity 220ms;
+    }
+
+    .corner-tl {
+        @apply rounded-tl-[7px] border-t-[2.5px] border-l-[2.5px];
+    }
+    .corner-tr {
+        @apply rounded-tr-[7px] border-t-[2.5px] border-r-[2.5px];
+    }
+    .corner-bl {
+        @apply rounded-bl-[7px] border-b-[2.5px] border-l-[2.5px];
+    }
+    .corner-br {
+        @apply rounded-br-[7px] border-r-[2.5px] border-b-[2.5px];
+    }
+
+    /* ---------- Berjalan ---------- */
+
+    .marquee {
+        display: flex;
+        width: max-content;
+        animation: marquee var(--dur, 60s) linear infinite;
+    }
+
+    .marquee-rev {
+        animation-direction: reverse;
+    }
+
+    .marquee:hover {
+        animation-play-state: paused;
+    }
+}
+
+/* ================================================================
+   Gerak
+   ================================================================ */
+
+/* Naik saat dimuat. Anak ke-n tertunda n × 55 ms, maksimal delapan. */
+.rise > * {
+    animation: rise 640ms var(--ease-expo) both;
+}
+.rise > *:nth-child(2) {
+    animation-delay: 55ms;
+}
+.rise > *:nth-child(3) {
+    animation-delay: 110ms;
+}
+.rise > *:nth-child(4) {
+    animation-delay: 165ms;
+}
+.rise > *:nth-child(5) {
+    animation-delay: 220ms;
+}
+.rise > *:nth-child(6) {
+    animation-delay: 275ms;
+}
+.rise > *:nth-child(7) {
+    animation-delay: 330ms;
+}
+.rise > *:nth-child(n + 8) {
+    animation-delay: 385ms;
+}
+
+/* Muncul saat digulir. Disembunyikan hanya kalau skrip sudah menandai halaman,
+   dan ada pengaman: kalau skrip gagal, semuanya tampil setelah 2,5 detik. */
+.js [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+        opacity 760ms var(--ease-expo),
+        transform 760ms var(--ease-expo);
+    transition-delay: calc(var(--d, 0) * 1ms);
+    animation: reveal-safe 0s 2.5s forwards;
+}
+
+.js [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    animation: none;
+}
+
+.js [data-count]:not([data-counted]) {
+    opacity: 0;
+    animation: reveal-safe 0s 2.5s forwards;
+}
+
+@keyframes reveal-safe {
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+}
+
+@keyframes tick-in {
+    from {
+        transform: scaleY(0.12);
+        opacity: 0;
+    }
+}
+
+@keyframes tick-on {
+    from {
+        background-color: rgb(243 240 230 / 0.12);
+    }
+}
+
+@keyframes bar-fill {
+    from {
+        transform: scaleX(0);
+    }
+}
+
+.bar-fill {
+    transform-origin: left center;
+    animation: bar-fill 900ms var(--ease-expo) 200ms both;
+}
+
+@keyframes col-grow {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+.col-grow {
+    transform-origin: bottom;
+    animation: col-grow 800ms var(--ease-expo) both;
+    animation-delay: calc(160ms + var(--i, 0) * 38ms);
+}
+
+@keyframes pop {
+    from {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+}
+
+.pop {
+    animation: pop 520ms var(--ease-spring) both;
+    animation-delay: calc(var(--d, 0) * 1ms);
+}
+
+/* Garis pindai. Pembungkusnya setinggi bingkai dan pitanya menempel di dasar pembungkus,
+   jadi menggeser pembungkus sejauh tingginya sendiri menyapu seluruh bingkai. */
+.scan-band {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 20%;
+    background: linear-gradient(to bottom, transparent, rgb(240 176 78 / 0.22) 80%, rgb(240 176 78 / 0.95) 99%, transparent);
+}
+
+@keyframes scan-pass {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    3% {
+        opacity: 1;
+    }
+    38% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    42%,
+    100% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+}
+
+@keyframes scan-loop {
+    0% {
+        transform: translateY(-100%);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}
+
+/* Satu putaran 8 detik: garis turun (0 sampai 38%), kotak muncul saat garis lewat, lalu reda. */
+.scan-pass {
+    animation: scan-pass 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.scan-loop {
+    animation: scan-loop 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes box-cycle {
+    0%,
+    2% {
+        opacity: 0;
+        transform: scale(1.1);
+    }
+    7% {
+        opacity: 1;
+        transform: none;
+    }
+    90% {
+        opacity: 1;
+        transform: none;
+    }
+    96%,
+    100% {
+        opacity: 0;
+        transform: none;
+    }
+}
+
+.box-cycle {
+    opacity: 0;
+    animation: box-cycle 8s var(--ease-expo) infinite;
+    animation-delay: calc(var(--t, 0) * 1ms);
+}
+
+@keyframes drift {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.drift {
+    animation: drift 6s ease-in-out infinite;
+}
+
+@keyframes marquee {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.35;
+        transform: scale(0.8);
+    }
+}
+
+.pulse-dot {
+    animation: pulse-dot 1.3s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes ping-ring {
+    0% {
+        transform: scale(1);
+        opacity: 0.55;
+    }
+    70%,
+    100% {
+        transform: scale(1.55);
+        opacity: 0;
+    }
+}
+
+.ping-ring {
+    animation: ping-ring 2.2s var(--ease-smooth) infinite;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+    }
+}
+
+.toast-in {
+    animation: toast-in 520ms var(--ease-spring) both;
+}
+
+@keyframes toast-life {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 200% 0;
+    }
+    to {
+        background-position: -200% 0;
+    }
+}
+
+.shimmer-text {
+    background: linear-gradient(100deg, var(--color-ink-3) 30%, var(--color-ink) 50%, var(--color-ink-3) 70%) 200% 0 / 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rise > *,
+    .bar-fill,
+    .col-grow,
+    .pop,
+    .tick,
+    .tick.on,
+    .scan-pass,
+    .scan-loop,
+    .box-cycle,
+    .drift,
+    .marquee,
+    .pulse-dot,
+    .ping-ring,
+    .toast-in,
+    .shimmer-text {
+        animation: none !important;
+    }
+
+    .box-cycle {
+        opacity: 1;
+    }
+
+    .scan-pass,
+    .scan-loop {
+        opacity: 0;
+    }
+
+    .js [data-reveal],
+    .js [data-count]:not([data-counted]) {
+        opacity: 1;
+        transform: none;
+        transition: none;
+        animation: none;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-group(*) {
+        animation: none !important;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0ms !important;
+    }
 }
