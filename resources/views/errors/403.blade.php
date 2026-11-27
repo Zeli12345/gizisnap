@@ -1,0 +1,1 @@
+@include('errors.layout', ['code' => 403, 'title' => 'Akses ditolak', 'message' => $exception->getMessage() ? $exception->getMessage() : 'Halaman ini bukan untuk akunmu. Kalau seharusnya bisa, hubungi admin.'])
