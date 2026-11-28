@@ -116,6 +116,7 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     */
 
     Route::get('/reports', ReportController::class)->name('reports.index');
+    Route::post('/reports/ai', [ReportController::class, 'generate'])->middleware('throttle:ai')->name('reports.ai');
     Route::get('/weight', [WeightLogController::class, 'index'])->name('weight.index');
     Route::post('/weight', [WeightLogController::class, 'store'])->name('weight.store');
     Route::delete('/weight/{weightLog}', [WeightLogController::class, 'destroy'])->name('weight.destroy');

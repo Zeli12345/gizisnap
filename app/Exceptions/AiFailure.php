@@ -24,7 +24,12 @@ class AiFailure extends RuntimeException
 
     public static function quotaExceeded(string $feature, int $limit): self
     {
-        $what = $feature === 'scan' ? 'scan' : 'pesan chat';
+        $what = match ($feature) {
+            'scan' => 'scan',
+            'report' => 'laporan',
+            'insight' => 'laporan',
+            default => 'pesan chat',
+        };
 
         return new self("Kuota {$what} hari ini habis ({$limit} dari {$limit}). Coba lagi besok.", 'quota');
     }

@@ -54,6 +54,29 @@ class FakeResponses
         ];
     }
 
+    public static function report(int $period, array $stats): array
+    {
+        $window = $period === 30 ? 'sebulan' : 'seminggu';
+        $logged = $stats['logged_days'] ?? 0;
+        $avg = $stats['avg_calories'] ?? 0;
+
+        return [
+            'headline' => "Polamu {$window} ini sudah punya arah yang jelas",
+            'summary' => "Kamu mencatat {$logged} hari dengan rata-rata {$avg} kkal per hari. Ini jawaban contoh mode tiruan, jadi angkanya belum dianalisis secara nyata.",
+            'changes' => [
+                ['title' => 'Keteraturan mencatat', 'detail' => 'Semakin sering mencatat, semakin mudah melihat pola yang perlu diperbaiki.'],
+                ['title' => 'Pilihan makanan', 'detail' => 'Tambahkan sayur dan protein tanpa gula agar piring lebih seimbang.'],
+            ],
+            'body' => [
+                'Pola makan yang lebih teratur membantu energi harian lebih stabil.',
+                'Serat dan protein yang cukup membuat kenyang lebih lama.',
+            ],
+            'reduce' => ['Minuman manis', 'Gorengan berlebihan', 'Porsi nasi yang sangat besar'],
+            'increase' => ['Sayur berdaun', 'Protein tanpa gula', 'Air putih', 'Buah utuh'],
+            'encouragement' => 'Tidak perlu sempurna setiap hari; yang penting arahnya terus membaik.',
+        ];
+    }
+
     public static function chat(string $message, ?int $remainingKcal = null): string
     {
         $remaining = $remainingKcal !== null

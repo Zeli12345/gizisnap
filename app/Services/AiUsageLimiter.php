@@ -18,6 +18,8 @@ class AiUsageLimiter
         return match ($feature) {
             'scan' => (int) config('gizisnap.ai.daily_scan_limit'),
             'chat' => (int) config('gizisnap.ai.daily_chat_limit'),
+            'report' => (int) config('gizisnap.ai.daily_report_limit'),
+            'insight' => (int) config('gizisnap.ai.daily_report_limit'),
             default => PHP_INT_MAX,
         };
     }
