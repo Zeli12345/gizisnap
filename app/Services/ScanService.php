@@ -52,6 +52,8 @@ class ScanService
         $user = $scan->user;
         $this->limiter->ensureAvailable($user, 'scan');
 
+        $healthConditions = $user->healthProfile?->health_conditions;
+
         $fake = (bool) config('gizisnap.ai.fake');
         $model = $fake ? 'fake' : (string) config('gizisnap.ai.scan_model');
         $started = microtime(true);
@@ -61,7 +63,7 @@ class ScanService
             if ($fake) {
                 $raw = FakeResponses::scan($originalName);
             } else {
-                $response = retry(2, fn () => FoodScanner::make()->prompt(
+                $response = retry(2, fn () => FoodScanner::make($healthConditions)->prompt(
                     FoodScanner::PROMPT,
                     attachments: [AiImage::fromStorage($scan->image_path, config('gizisnap.scan.disk'))],
                     provider: config('gizisnap.ai.provider'),
@@ -173,6 +175,57 @@ class ScanService
             'confidence' => round(min(1, max(0, (float) ($raw['confidence'] ?? 0))), 2),
             'items' => $items,
             'notes' => Str::limit(trim((string) ($raw['notes'] ?? '')), 500),
+            'health_assessment' => $this->normalizeAssessment($raw['health_assessment'] ?? []),
+        ];
+    }
+
+    /**
+     * Rapikan penilaian kesehatan dari AI. Pengguna tanpa kondisi tetap
+     * mendapat struktur kosong supaya halaman hasil scan tidak berubah.
+     */
+    private function normalizeAssessment(mixed $value): array
+    {
+        $data = is_array($value) ? $value : [];
+        $severity = in_array($data['severity'] ?? null, ['safe', 'caution', 'danger'], true)
+            ? $data['severity']
+            : 'safe';
+
+        $list = function (string $key, int $max) use ($data): array {
+            $items = $data[$key] ?? [];
+
+            if (! is_array($items)) {
+                return [];
+            }
+
+            return collect($items)
+                ->filter(fn ($item) => is_string($item) && trim($item) !== '')
+                ->map(fn ($item) => Str::limit(trim($item), 160))
+                ->take($max)
+                ->values()
+                ->all();
+        };
+
+        $flagged = $data['flagged_items'] ?? [];
+
+        $flagged = is_array($flagged)
+            ? collect($flagged)
+                ->filter(fn ($item) => is_array($item) && trim((string) ($item['name'] ?? '')) !== '')
+                ->map(fn ($item) => [
+                    'name' => Str::limit(trim((string) $item['name']), 117),
+                    'reason' => Str::limit(trim((string) ($item['reason'] ?? '')), 120),
+                ])
+                ->take(10)
+                ->values()
+                ->all()
+            : [];
+
+        return [
+            'severity' => $severity,
+            'summary' => Str::limit(trim((string) ($data['summary'] ?? '')), 400),
+            'warnings' => $list('warnings', 4),
+            'avoid' => $list('avoid', 5),
+            'prefer' => $list('prefer', 5),
+            'flagged_items' => $flagged,
         ];
     }
 

@@ -40,6 +40,17 @@ class FakeResponses
                 ['name' => 'Kerupuk udang', 'portion_desc' => '2 keping', 'weight_g' => 10, 'calories_kcal' => 53, 'protein_g' => 0.5, 'carbs_g' => 6, 'fat_g' => 3, 'fiber_g' => 0, 'sugar_g' => 0.3, 'sodium_mg' => 110],
             ],
             'notes' => 'Mode tiruan: ini jawaban contoh, bukan hasil analisis foto Anda.',
+            'health_assessment' => [
+                'severity' => 'caution',
+                'summary' => 'Mode tiruan: nasi goreng dan kerupuk perlu dibatasi bila punya kondisi gula darah atau tekanan darah.',
+                'warnings' => ['Porsi karbohidrat cukup besar dari nasi goreng.', 'Kerupuk menambah natrium.'],
+                'avoid' => ['Kerupuk dan gorengan berlebihan', 'Nasi putih porsi besar'],
+                'prefer' => ['Tambahan sayur', 'Protein tanpa gula', 'Air putih'],
+                'flagged_items' => [
+                    ['name' => 'Nasi goreng', 'reason' => 'Karbohidrat tinggi'],
+                    ['name' => 'Kerupuk udang', 'reason' => 'Tinggi natrium'],
+                ],
+            ],
         ];
     }
 

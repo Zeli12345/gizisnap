@@ -23,6 +23,7 @@ class OnboardingRequest extends FormRequest
             'goal' => ['required', Rule::enum(Goal::class)],
             'allergies' => ['nullable', 'string', 'max:255'],
             'dietary_preference' => ['nullable', 'string', 'max:100'],
+            'health_conditions' => ['nullable', 'string', 'max:500'],
         ];
     }
 

@@ -8,6 +8,7 @@
         'goal' => old('goal', 'maintain'),
         'allergies' => old('allergies', ''),
         'dietary_preference' => old('dietary_preference', ''),
+        'health_conditions' => old('health_conditions', ''),
     ];
     $errorStep = $errors->hasAny(['gender', 'birth_date', 'height_cm', 'weight_kg']) ? 1 : ($errors->has('activity_level') ? 2 : ($errors->any() ? 3 : 1));
     $config = [
@@ -112,6 +113,15 @@
                     <div class="mt-6 grid gap-4 sm:grid-cols-2">
                         <x-field label="Alergi (opsional)" name="allergies" x-model="form.allergies" placeholder="kacang, udang" hint="Pisahkan dengan koma." />
                         <x-field label="Pantangan (opsional)" name="dietary_preference" x-model="form.dietary_preference" placeholder="vegetarian" />
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="f-health_conditions" class="label">Penyakit atau kondisi kesehatan (opsional)</label>
+                        <textarea id="f-health_conditions" name="health_conditions" rows="3" maxlength="500"
+                            x-model="form.health_conditions" class="field resize-y"
+                            placeholder="contoh: diabetes tipe 2, kolesterol tinggi, asam urat"></textarea>
+                        @error('health_conditions')<p class="error-text">{{ $message }}</p>@enderror
+                        <p class="hint">Tulis bebas. AI akan memakai keterangan ini untuk memperingatkan makanan yang perlu dihindari.</p>
                     </div>
 
                     <div class="relative mt-8 overflow-hidden panel rounded-stage px-6 py-6" x-show="estimate" x-transition:enter="transition duration-[600ms] ease-spring" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" aria-live="polite">
