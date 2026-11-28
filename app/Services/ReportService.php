@@ -126,7 +126,7 @@ class ReportService
         $report = NutritionReport::query()
             ->where('user_id', $user->id)
             ->where('period_days', $period)
-            ->where('period_end', today()->toDateString())
+            ->whereDate('period_end', today()->toDateString())
             ->where('status', 'ready')
             ->latest('id')
             ->first();
