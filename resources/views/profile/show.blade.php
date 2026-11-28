@@ -70,6 +70,13 @@
                     </div>
                     <x-field label="Alergi" name="allergies" :value="old('allergies', implode(', ', $profile->allergies ?? []))" placeholder="kacang, udang" hint="Pisahkan dengan koma." />
                     <x-field label="Pantangan" name="dietary_preference" :value="old('dietary_preference', $profile->dietary_preference)" placeholder="vegetarian" />
+                    <div class="sm:col-span-2">
+                        <label for="f-health_conditions" class="label">Penyakit atau kondisi kesehatan</label>
+                        <textarea id="f-health_conditions" name="health_conditions" rows="3" maxlength="500" class="field resize-y"
+                            placeholder="contoh: diabetes tipe 2, kolesterol tinggi, asam urat">{{ old('health_conditions', $profile->health_conditions) }}</textarea>
+                        @error('health_conditions')<p class="error-text">{{ $message }}</p>@enderror
+                        <p class="hint">Tulis bebas. AI memakai keterangan ini saat scan untuk memberi peringatan makanan.</p>
+                    </div>
                 </div>
             </div>
         </form>

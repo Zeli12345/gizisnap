@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'gender', 'birth_date', 'height_cm', 'weight_kg', 'activity_level', 'goal', 'allergies', 'dietary_preference'])]
+#[Fillable(['user_id', 'gender', 'birth_date', 'height_cm', 'weight_kg', 'activity_level', 'goal', 'allergies', 'dietary_preference', 'health_conditions'])]
 class HealthProfile extends Model
 {
     /** @use HasFactory<HealthProfileFactory> */

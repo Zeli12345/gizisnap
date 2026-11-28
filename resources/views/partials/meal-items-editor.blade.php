@@ -44,12 +44,17 @@
                         <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span class="text-[14.5px] font-semibold" x-text="item.name || 'Makanan baru'"></span>
                             <span x-show="item.needs_check" class="shrink-0 rounded-[3px] bg-sun-tint px-1.5 py-0.5 text-[10.5px] font-semibold text-sun-ink">Perlu dicek</span>
+                            <span x-show="item.health_reason" x-cloak class="shrink-0 rounded-[3px] bg-danger/15 px-1.5 py-0.5 text-[10.5px] font-semibold text-danger">Perhatian</span>
                         </span>
                         <span class="num mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[12px] text-ink-3">
                             <span x-text="item.portion_desc"></span>
                             <span x-text="'P ' + format(item.protein_g) + ' g'"></span>
                             <span x-text="'K ' + format(item.carbs_g) + ' g'"></span>
                             <span x-text="'L ' + format(item.fat_g) + ' g'"></span>
+                        </span>
+                        <span x-show="item.health_reason" x-cloak class="mt-1 flex items-start gap-1.5 text-[11.5px] leading-snug text-danger">
+                            <x-icon name="alert" size="12" class="mt-0.5 shrink-0" />
+                            <span class="min-w-0 break-words" x-text="item.health_reason"></span>
                         </span>
                     </span>
                     <span class="num shrink-0 text-right text-[14.5px] font-semibold">
