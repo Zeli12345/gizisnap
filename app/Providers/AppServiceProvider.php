@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
             $user = auth()->user();
             $ring = null;
 
-            if ($user && $user->healthProfile) {
+            if ($user && ! $user->isAdmin() && $user->healthProfile) {
                 $day = app(DailySummaryService::class)->forDate($user, now());
                 $goal = (int) ($day['target']?->calories_kcal ?? 0);
                 $eaten = (int) round($day['totals']['calories_kcal']);

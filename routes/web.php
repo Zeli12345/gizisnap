@@ -133,17 +133,19 @@ Route::middleware(['auth', 'onboarded'])->group(function () {
     Route::put('/profile/targets', [ProfileController::class, 'updateTargets'])->name('profile.targets');
     Route::delete('/profile/targets', [ProfileController::class, 'resetTargets'])->name('profile.targets.reset');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-    /*
-    |----------------------------------------------------------------------
-    | Panel admin
-    |----------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| Panel admin
+|--------------------------------------------------------------------------
+| Admin tidak melewati onboarding dan tidak memakai halaman pengguna.
+| Semua rute di sini langsung menuju halaman yang ditangani admin.
+*/
 
-    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/', Admin\DashboardController::class)->name('dashboard');
-        Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
-        Route::get('/ai-usage', Admin\AiUsageController::class)->name('ai-usage');
-        Route::resource('foods', Admin\FoodController::class)->except('show');
-    });
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', Admin\DashboardController::class)->name('dashboard');
+    Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
+    Route::get('/ai-usage', Admin\AiUsageController::class)->name('ai-usage');
+    Route::resource('foods', Admin\FoodController::class)->except('show');
 });

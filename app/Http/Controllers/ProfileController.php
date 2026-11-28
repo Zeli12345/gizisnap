@@ -18,6 +18,11 @@ class ProfileController extends Controller
     public function show(Request $request, NutritionCalculator $calculator)
     {
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return view('profile.admin', ['user' => $user]);
+        }
+
         $profile = $user->healthProfile;
         $bmi = $calculator->bmi($profile->weight_kg, $profile->height_cm);
 

@@ -1,25 +1,30 @@
 @props(['title' => null, 'wide' => false])
 @php
     $user = auth()->user();
-    $nav = [
-        ['route' => 'dashboard', 'match' => ['dashboard'], 'label' => 'Hari ini', 'icon' => 'home'],
-        ['route' => 'meals.index', 'match' => ['meals.*'], 'label' => 'Catatan', 'icon' => 'utensils'],
-        ['route' => 'chat.index', 'match' => ['chat.*'], 'label' => 'Tanya gizi', 'icon' => 'chat'],
-        ['route' => 'reports.index', 'match' => ['reports.*', 'weight.*'], 'label' => 'Laporan', 'icon' => 'chart'],
-    ];
+    $isAdmin = $user?->isAdmin() ?? false;
     $admin = [
         ['admin.dashboard', 'admin.dashboard', 'Ringkasan', 'settings'],
         ['admin.users.index', 'admin.users.*', 'Pengguna', 'users'],
         ['admin.ai-usage', 'admin.ai-usage', 'Pemakaian AI', 'cpu'],
         ['admin.foods.index', 'admin.foods.*', 'Daftar makanan', 'database'],
     ];
-    $mobile = [
+    $adminNav = collect($admin)
+        ->map(fn ($item) => ['route' => $item[0], 'match' => $item[1], 'label' => $item[2], 'icon' => $item[3]])
+        ->all();
+    $nav = $isAdmin ? $adminNav : [
+        ['route' => 'dashboard', 'match' => ['dashboard'], 'label' => 'Hari ini', 'icon' => 'home'],
+        ['route' => 'meals.index', 'match' => ['meals.*'], 'label' => 'Catatan', 'icon' => 'utensils'],
+        ['route' => 'chat.index', 'match' => ['chat.*'], 'label' => 'Tanya gizi', 'icon' => 'chat'],
+        ['route' => 'reports.index', 'match' => ['reports.*', 'weight.*'], 'label' => 'Laporan', 'icon' => 'chart'],
+    ];
+    $mobile = $isAdmin ? $adminNav : [
         ['route' => 'dashboard', 'match' => 'dashboard', 'label' => 'Hari ini', 'icon' => 'home'],
         ['route' => 'meals.index', 'match' => 'meals.*', 'label' => 'Catatan', 'icon' => 'utensils'],
         ['route' => 'chat.index', 'match' => 'chat.*', 'label' => 'Tanya', 'icon' => 'chat'],
         ['route' => 'reports.index', 'match' => ['reports.*', 'weight.*'], 'label' => 'Laporan', 'icon' => 'chart'],
     ];
-    $ring = $dayRing ?? null;
+    $home = route($isAdmin ? 'admin.dashboard' : 'dashboard');
+    $ring = $isAdmin ? null : ($dayRing ?? null);
     $circ = 2 * M_PI * 15;
 @endphp
 <!DOCTYPE html>
@@ -33,18 +38,23 @@
     {{-- Sisi kiri, laptop. Tetap diam saat berpindah halaman; hanya penanda aktif yang meluncur. --}}
     <aside class="fixed inset-y-0 left-0 z-30 hidden w-[256px] flex-col border-r border-ink/6 bg-[#0c0e0b]/80 backdrop-blur-xl lg:flex" style="view-transition-name: sidebar">
         <div class="px-6 pt-7 pb-6">
-            <a href="{{ route('dashboard') }}" aria-label="GiziSnap, ke halaman hari ini" class="inline-flex rounded-control">
+            <a href="{{ $home }}" aria-label="GiziSnap, ke {{ $isAdmin ? 'ringkasan admin' : 'halaman hari ini' }}" class="inline-flex rounded-control">
                 <x-logo />
             </a>
         </div>
 
-        <div class="px-4">
-            <a href="{{ route('scan.create') }}" class="btn btn-primary w-full py-2.5 text-[14px]">
-                <x-icon name="camera" size="17" stroke="2" /> Scan makanan
-            </a>
-        </div>
+        @unless ($isAdmin)
+            <div class="px-4">
+                <a href="{{ route('scan.create') }}" class="btn btn-primary w-full py-2.5 text-[14px]">
+                    <x-icon name="camera" size="17" stroke="2" /> Scan makanan
+                </a>
+            </div>
+        @endunless
 
-        <nav class="mt-7 flex-1 overflow-y-auto px-3" aria-label="Menu utama">
+        <nav class="mt-7 flex-1 overflow-y-auto px-3" aria-label="{{ $isAdmin ? 'Menu admin' : 'Menu utama' }}">
+            @if ($isAdmin)
+                <p class="mb-2 px-3.5 text-[10.5px] font-semibold tracking-[0.08em] text-ink-3/70 uppercase">Panel admin</p>
+            @endif
             <ul class="space-y-px">
                 @foreach ($nav as $item)
                     @php $active = request()->routeIs($item['match']); @endphp
@@ -65,25 +75,6 @@
                     </li>
                 @endforeach
             </ul>
-
-            @if ($user->isAdmin())
-                <p class="mt-8 mb-2 px-3.5 text-[10.5px] font-semibold tracking-[0.08em] text-ink-3/70 uppercase">Admin</p>
-                <ul class="space-y-px">
-                    @foreach ($admin as [$route, $match, $label, $icon])
-                        @php $active = request()->routeIs($match); @endphp
-                        <li>
-                            <a href="{{ route($route) }}" @if ($active) aria-current="page" @endif
-                                @class([
-                                    'flex items-center gap-3 rounded-[7px] px-3.5 py-2 text-[13px] transition-colors duration-140 ease-smooth',
-                                    'bg-sunk font-semibold text-ink' => $active,
-                                    'font-medium text-ink-3 hover:bg-sunk/50 hover:text-ink' => ! $active,
-                                ])>
-                                <x-icon :name="$icon" size="15" :class="$active ? 'text-sun' : 'text-ink-3'" class="shrink-0" /> {{ $label }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
         </nav>
 
         {{-- Cincin hari ini: ada di setiap halaman, jadi sisa kalori selalu terlihat --}}
@@ -106,7 +97,7 @@
                 <x-avatar :user="$user" />
                 <span class="min-w-0 flex-1">
                     <span class="block truncate text-[13px] font-semibold">{{ $user->name }}</span>
-                    <span class="block truncate text-[11.5px] text-ink-3">Profil dan pengaturan</span>
+                    <span class="block truncate text-[11.5px] text-ink-3">{{ $isAdmin ? 'Akun admin' : 'Profil dan pengaturan' }}</span>
                 </span>
                 <x-icon name="chevron-right" size="14" class="shrink-0 text-ink-3" />
             </a>
@@ -115,7 +106,7 @@
 
     {{-- Bilah atas, ponsel --}}
     <header class="sticky top-0 z-20 flex items-center justify-between border-b border-ink/8 bg-canvas/80 px-4 py-2.5 backdrop-blur-xl lg:hidden" style="view-transition-name: topbar">
-        <a href="{{ route('dashboard') }}" aria-label="GiziSnap, ke halaman hari ini" class="rounded-control"><x-logo :size="29" /></a>
+        <a href="{{ $home }}" aria-label="GiziSnap, ke {{ $isAdmin ? 'ringkasan admin' : 'halaman hari ini' }}" class="rounded-control"><x-logo :size="29" /></a>
         <div class="flex items-center gap-2">
             @if ($ring && $ring['goal'] > 0)
                 <a href="{{ route('dashboard') }}" class="num flex items-center gap-1.5 rounded-full border border-ink/10 bg-paper py-1 pr-3 pl-1.5 text-[12px] font-semibold" aria-label="Sisa kalori hari ini">
@@ -129,7 +120,7 @@
             @endif
             <a href="{{ route('profile.show') }}" class="rounded-full p-0.5">
                 <x-avatar :user="$user" size="sm" />
-                <span class="sr-only">Profil dan pengaturan</span>
+                <span class="sr-only">Akun</span>
             </a>
         </div>
     </header>
@@ -145,9 +136,9 @@
         </div>
     </main>
 
-    {{-- Navigasi bawah, ponsel. Tombol scan di tengah, bukan tersembunyi di menu. --}}
-    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-ink/8 bg-paper/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden" aria-label="Menu utama" style="view-transition-name: bottomnav">
-        <ul class="mx-auto grid max-w-md grid-cols-5 items-end px-1">
+    {{-- Navigasi bawah, ponsel. Untuk admin hanya menu admin, tanpa tombol scan. --}}
+    <nav class="fixed inset-x-0 bottom-0 z-30 border-t border-ink/8 bg-paper/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden" aria-label="{{ $isAdmin ? 'Menu admin' : 'Menu utama' }}" style="view-transition-name: bottomnav">
+        <ul @class(['mx-auto grid max-w-md items-end px-1', 'grid-cols-4' => $isAdmin, 'grid-cols-5' => ! $isAdmin])>
             @foreach ($mobile as $item)
                 @php $active = request()->routeIs($item['match']); @endphp
                 <li>
@@ -158,16 +149,18 @@
                         {{ $item['label'] }}
                     </a>
                 </li>
-                @if ($loop->index === 1)
-                    <li>
-                        <a href="{{ route('scan.create') }}" class="group flex flex-col items-center gap-1" @if (request()->routeIs('scan.*')) aria-current="page" @endif>
-                            <span class="grid size-[52px] -translate-y-3.5 place-items-center rounded-full bg-sun text-canvas shadow-[0_8px_24px_-4px_rgb(240_176_78/0.35),0_4px_12px_-2px_rgb(0_0_0/0.7)] ring-[5px] ring-paper transition-transform duration-[420ms] ease-spring active:scale-90">
-                                <x-icon name="camera" size="22" stroke="2" />
-                            </span>
-                            <span @class(['-mt-4 text-[10.5px] font-semibold', 'text-sun' => request()->routeIs('scan.*'), 'text-ink-2' => ! request()->routeIs('scan.*')])>Scan</span>
-                        </a>
-                    </li>
-                @endif
+                @unless ($isAdmin)
+                    @if ($loop->index === 1)
+                        <li>
+                            <a href="{{ route('scan.create') }}" class="group flex flex-col items-center gap-1" @if (request()->routeIs('scan.*')) aria-current="page" @endif>
+                                <span class="grid size-[52px] -translate-y-3.5 place-items-center rounded-full bg-sun text-canvas shadow-[0_8px_24px_-4px_rgb(240_176_78/0.35),0_4px_12px_-2px_rgb(0_0_0/0.7)] ring-[5px] ring-paper transition-transform duration-[420ms] ease-spring active:scale-90">
+                                    <x-icon name="camera" size="22" stroke="2" />
+                                </span>
+                                <span @class(['-mt-4 text-[10.5px] font-semibold', 'text-sun' => request()->routeIs('scan.*'), 'text-ink-2' => ! request()->routeIs('scan.*')])>Scan</span>
+                            </a>
+                        </li>
+                    @endif
+                @endunless
             @endforeach
         </ul>
     </nav>

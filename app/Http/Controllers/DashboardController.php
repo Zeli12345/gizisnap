@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserVisit;
 use App\Services\DailySummaryService;
 use App\Services\MealTimeline;
 use Carbon\CarbonImmutable;
@@ -16,6 +17,13 @@ class DashboardController extends Controller
     ) {
         $date = $this->resolveDate($request->query('date'));
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        // Halaman utama pengguna: satu kunjungan per hari, bukan per muat halaman.
+        UserVisit::recordFor($user);
 
         return view('dashboard.index', [
             'summary' => $summary->forDate($user, $date),

@@ -51,6 +51,10 @@ class AuthController extends Controller
         $user = $request->user();
         $user->update(['last_login_at' => now()]);
 
+        if ($user->isAdmin()) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
         return $user->isOnboarded()
             ? redirect()->intended(route('dashboard'))
             : redirect()->route('onboarding.show');
@@ -89,6 +93,12 @@ class AuthController extends Controller
 
         Auth::login($user, remember: true);
         $request->session()->regenerate();
+
+        if ($user->isAdmin()) {
+            return redirect()
+                ->route('admin.dashboard')
+                ->with('success', 'Akun admin dibuat.');
+        }
 
         return redirect()
             ->route('onboarding.show')

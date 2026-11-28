@@ -13,6 +13,7 @@
     <div class="grid grid-cols-2 gap-x-6 gap-y-5 pb-2 sm:grid-cols-3">
         <x-stat label="Total pengguna" :value="gizi_num($stats['users'])" />
         <x-stat label="Aktif minggu ini" :value="gizi_num($stats['active_week'])" />
+        <x-stat label="Kunjungan beranda" :value="gizi_num($stats['visits_week'])" unit="kali" note="Hari aktif · 7 hari terakhir" />
         <x-stat label="Catatan makan" :value="gizi_num($stats['meals_week'])" note="7 hari terakhir" />
         <x-stat label="Scan foto" :value="gizi_num($stats['scans_week'])" note="7 hari terakhir" color="pine" />
         <x-stat label="Error AI" :value="gizi_num($stats['ai_errors_week'])" note="7 hari terakhir" color="danger" />

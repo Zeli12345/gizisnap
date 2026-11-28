@@ -7,12 +7,17 @@ use App\Enums\Gender;
 use App\Enums\Goal;
 use App\Http\Requests\OnboardingRequest;
 use App\Services\NutritionCalculator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OnboardingController extends Controller
 {
-    public function show()
+    public function show(Request $request)
     {
+        if ($request->user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return view('onboarding.show', [
             'genders' => Gender::cases(),
             'activityLevels' => ActivityLevel::cases(),
@@ -23,6 +28,10 @@ class OnboardingController extends Controller
     public function store(OnboardingRequest $request, NutritionCalculator $calculator)
     {
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
 
         DB::transaction(function () use ($request, $user, $calculator) {
             $profile = $user->healthProfile()->create([
