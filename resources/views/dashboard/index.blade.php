@@ -275,25 +275,79 @@
                         x-data="water({ water: {{ $summary['water_ml'] }}, target: {{ $summary['water_target_ml'] }}, addUrl: '{{ route('water.store') }}', undoUrl: '{{ route('water.destroy-latest') }}' })">
                         <div class="flex items-center justify-between gap-3">
                             <h2 id="judul-air" class="text-[12.5px] font-semibold text-ink-3">Air minum</h2>
-                            <div class="flex shrink-0 items-center gap-1">
-                                <button type="button" class="btn grid size-8 place-items-center rounded-full p-0 text-ink-3 hover:bg-sunk hover:text-ink disabled:opacity-25" @click="undo()" :disabled="busy || water <= 0" aria-label="Batalkan satu gelas">
-                                    <x-icon name="minus" size="15" />
-                                </button>
-                                <button type="button" class="btn grid size-8 place-items-center rounded-full bg-water/15 p-0 text-water hover:bg-water/25 disabled:opacity-30" @click="add()" :disabled="busy" aria-label="Tambah satu gelas">
-                                    <x-icon name="plus" size="16" stroke="2.2" />
-                                </button>
-                            </div>
+                            <button type="button" class="btn grid size-8 place-items-center rounded-full p-0 text-ink-3 hover:bg-sunk hover:text-ink disabled:opacity-25" @click="undo()" :disabled="busy || water <= 0" aria-label="Batalkan catatan minum terakhir">
+                                <x-icon name="minus" size="15" />
+                            </button>
                         </div>
-                        <p class="num mt-2.5">
+                        <p class="num mt-2.5" aria-live="polite">
                             <span class="font-display text-[30px] leading-none font-semibold tracking-[-0.02em] text-water" x-text="format(water)">{{ gizi_num($summary['water_ml']) }}</span>
                             <span class="text-[12px] font-medium text-ink-3"> / <span x-text="format(target)">{{ gizi_num($summary['water_target_ml']) }}</span> ml</span>
+                        </p>
+                        <p class="mt-1 text-[11.5px] font-medium text-ink-3">
+                            <span class="num text-water" x-text="formatLiters(water)">{{ gizi_num($summary['water_ml'] / 1000, 2) }} L</span>
+                            <span> dari </span>
+                            <span class="num" x-text="formatLiters(target)">{{ gizi_num($summary['water_target_ml'] / 1000, 2) }} L</span>
+                            <span x-show="target > 0"> · <span x-text="targetGlasses"></span> <span x-text="vessel.label.toLowerCase()"></span></span>
                         </p>
                         <div class="mt-3.5 flex gap-1" aria-hidden="true">
                             <template x-for="i in targetGlasses" :key="i">
                                 <span class="relative h-7 flex-1 overflow-hidden rounded-[5px] border border-ink/10 bg-sunk">
-                                    <span class="absolute inset-x-0 bottom-0 bg-water/75 transition-[height] duration-[520ms] ease-expo" :style="`height: ${i <= glasses ? 100 : 0}%`"></span>
+                                    <span class="absolute inset-x-0 bottom-0 bg-water/75 transition-[height] duration-[520ms] ease-expo" :style="`height: ${Math.min(100, Math.max(0, ((water - (i - 1) * vessel.ml) / vessel.ml) * 100))}%`"></span>
                                 </span>
                             </template>
+                        </div>
+
+                        <div class="mt-4 rounded-[10px] border border-ink/10 bg-sunk/40 p-3">
+                            <p class="flex items-center gap-1.5 text-[10.5px] font-semibold tracking-[0.05em] text-ink-3 uppercase">
+                                <x-icon name="cup" size="13" /> Tambah manual
+                            </p>
+
+                            <div class="mt-2.5 space-y-2">
+                                <label class="block">
+                                    <span class="mb-1 block text-[11px] font-medium text-ink-3">Kategori alat minum</span>
+                                    <select x-model="vesselId" @change="setVessel(vesselId)" class="field field-sm" :disabled="busy">
+                                        <option value="gelas">Gelas</option>
+                                        <option value="mug">Mug</option>
+                                        <option value="tumbler">Tumbler</option>
+                                        <option value="botol">Botol</option>
+                                        <option value="botol-besar">Botol besar</option>
+                                    </select>
+                                </label>
+
+                                <div class="flex items-end gap-2">
+                                    <label class="min-w-0 flex-1">
+                                        <span class="mb-1 block text-[11px] font-medium text-ink-3">Jumlah</span>
+                                        <div class="relative">
+                                            <input id="air-custom" type="number" min="50" max="2000" step="10" inputmode="numeric"
+                                                x-model="amountMl" @keydown.enter.prevent="add()"
+                                                class="field field-sm pr-10" :disabled="busy">
+                                            <span class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-ink-3">ml</span>
+                                        </div>
+                                    </label>
+                                    <button type="button" class="btn btn-primary btn-sm h-[38px] shrink-0" @click="add()" :disabled="busy">
+                                        <x-icon name="plus" size="14" stroke="2.2" /> Tambah
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p class="mt-1.5 text-[11px] leading-relaxed text-ink-3">50–2.000 ml. Jumlah terisi otomatis sesuai kategori, bisa diubah.</p>
+                            <p x-show="lastEntry" x-cloak class="mt-2 flex items-center gap-1.5 text-[11.5px] font-medium text-pine" role="status">
+                                <x-icon name="check" size="13" stroke="2.2" /> Tercatat: <span x-text="lastEntry"></span>
+                            </p>
+                        </div>
+
+                        <div class="mt-3 rounded-[8px] border border-water/15 bg-water/5 px-3 py-2.5">
+                            <p class="flex items-start gap-2 text-[11.5px] leading-relaxed text-ink-2">
+                                <x-icon name="clock" size="14" class="mt-px shrink-0 text-water" />
+                                <span x-show="!reached">
+                                    <span class="font-semibold text-ink" x-text="remainingLabel"></span>
+                                    <span> · sekitar </span>
+                                    <span class="font-semibold text-ink" x-text="durationLabel"></span>
+                                    <span> lagi, habis sekitar pukul </span>
+                                    <span class="num font-semibold text-water" x-text="finishTime"></span>.
+                                </span>
+                                <span x-show="reached" x-cloak class="font-semibold text-water">Target air hari ini sudah cukup.</span>
+                            </p>
                         </div>
                         <p x-show="error" x-text="error" class="error-text" x-cloak></p>
                     </section>

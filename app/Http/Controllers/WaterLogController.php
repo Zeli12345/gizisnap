@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\DailySummaryService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class WaterLogController extends Controller
 {
@@ -11,10 +12,12 @@ class WaterLogController extends Controller
     {
         $data = $request->validate([
             'amount_ml' => ['required', 'integer', 'between:50,2000'],
+            'vessel' => ['nullable', 'string', Rule::in(['gelas', 'mug', 'tumbler', 'botol', 'botol-besar'])],
         ]);
 
         $request->user()->waterLogs()->create([
             'amount_ml' => $data['amount_ml'],
+            'vessel' => $data['vessel'] ?? null,
             'logged_at' => now(),
         ]);
 

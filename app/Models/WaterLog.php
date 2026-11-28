@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'amount_ml', 'logged_at'])]
+#[Fillable(['user_id', 'amount_ml', 'vessel', 'logged_at'])]
 class WaterLog extends Model
 {
     protected function casts(): array
