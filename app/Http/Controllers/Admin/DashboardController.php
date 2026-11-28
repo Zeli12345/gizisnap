@@ -8,6 +8,7 @@ use App\Models\Food;
 use App\Models\Meal;
 use App\Models\Scan;
 use App\Models\User;
+use App\Models\UserVisit;
 
 class DashboardController extends Controller
 {
@@ -31,6 +32,7 @@ class DashboardController extends Controller
             'stats' => [
                 'users' => User::count(),
                 'active_week' => User::where('last_login_at', '>=', $since)->count(),
+                'visits_week' => UserVisit::where('visited_on', '>=', $since->toDateString())->count(),
                 'meals_week' => Meal::where('created_at', '>=', $since)->count(),
                 'scans_week' => Scan::where('created_at', '>=', $since)->count(),
                 'ai_errors_week' => AiUsageLog::where('created_at', '>=', $since)->where('status', 'error')->count(),

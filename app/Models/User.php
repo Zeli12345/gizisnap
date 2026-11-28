@@ -66,6 +66,11 @@ class User extends Authenticatable
         return $this->hasMany(WaterLog::class);
     }
 
+    public function visits(): HasMany
+    {
+        return $this->hasMany(UserVisit::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;

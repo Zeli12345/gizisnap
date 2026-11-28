@@ -13,7 +13,7 @@ class EnsureOnboarded
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user() && ! $request->user()->isOnboarded()) {
+        if ($request->user() && ! $request->user()->isAdmin() && ! $request->user()->isOnboarded()) {
             return $request->expectsJson()
                 ? response()->json(['message' => 'Lengkapi profil terlebih dahulu.'], 409)
                 : redirect()->route('onboarding.show');
