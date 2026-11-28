@@ -26,6 +26,7 @@ class ScanService
         private readonly AiUsageLimiter $limiter,
         private readonly NutritionCalculator $calculator,
         private readonly MealService $meals,
+        private readonly FoodCatalog $foods,
     ) {}
 
     /**
@@ -101,6 +102,18 @@ class ScanService
             'ai_result' => $result,
             'error_message' => null,
         ]);
+
+        if ($isFood) {
+            try {
+                $this->foods->addFromScan($result['items']);
+            } catch (Throwable $e) {
+                // Katalog makanan tidak boleh menggagalkan hasil scan pengguna.
+                Log::warning('Gagal menambah makanan hasil scan ke katalog', [
+                    'scan_id' => $scan->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $scan;
     }
