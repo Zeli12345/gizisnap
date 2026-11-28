@@ -1,6 +1,6 @@
 <x-layouts.app title="Daftar makanan" :wide="true">
     <x-page-header title="Daftar makanan">
-        <x-slot:subtitle>Dipakai saat pengguna mencatat tanpa foto. Angka berlaku untuk satu porsi.</x-slot:subtitle>
+        <x-slot:subtitle>Dipakai saat pengguna mencatat tanpa foto. Makanan dari scan masuk otomatis dan langsung tampil di pencarian pengguna.</x-slot:subtitle>
         <x-slot:actions>
             <form method="GET" class="relative" role="search">
                 <x-icon name="search" size="15" class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" />
@@ -27,8 +27,16 @@
                 @forelse ($foods as $food)
                     <tr @class(['text-ink-3' => ! $food->is_active])>
                         <td>
-                            <p class="font-semibold">{{ $food->name }}@unless ($food->is_active) <span class="ml-1 bg-sunk px-1.5 py-0.5 text-[10.5px] font-semibold">Disembunyikan</span>@endunless</p>
-                            <p class="text-[12.5px] text-ink-3">{{ $food->serving_desc }}</p>
+                            <p class="flex flex-wrap items-center gap-1 font-semibold">
+                                {{ $food->name }}
+                                @if ($food->source === 'Scan pengguna')
+                                    <span class="rounded-[3px] bg-sun-tint px-1.5 py-0.5 text-[10.5px] font-semibold text-sun-ink">Dari scan</span>
+                                @endif
+                                @unless ($food->is_active)
+                                    <span class="rounded-[3px] bg-sunk px-1.5 py-0.5 text-[10.5px] font-semibold">Disembunyikan</span>
+                                @endunless
+                            </p>
+                            <p class="text-[12.5px] text-ink-3">{{ $food->serving_desc }} · {{ $food->source }}</p>
                         </td>
                         <td class="text-ink-2">{{ $food->category }}</td>
                         <td class="num text-right font-semibold">{{ gizi_num($food->calories_kcal) }}</td>
