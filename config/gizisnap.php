@@ -30,6 +30,7 @@ return [
         'provider' => env('AI_PROVIDER', 'openai'),
         'scan_model' => env('AI_SCAN_MODEL', 'gpt-6-luna'),
         'chat_model' => env('AI_CHAT_MODEL', 'gpt-6-luna'),
+        'report_model' => env('AI_REPORT_MODEL', env('AI_CHAT_MODEL', 'gpt-6-luna')),
         'timeout' => (int) env('AI_TIMEOUT', 30),
 
         /*
@@ -46,9 +47,11 @@ return [
         */
         'scan_max_tokens' => (int) env('AI_SCAN_MAX_TOKENS', 4096),
         'chat_max_tokens' => (int) env('AI_CHAT_MAX_TOKENS', 1500),
+        'report_max_tokens' => (int) env('AI_REPORT_MAX_TOKENS', 1800),
 
         'daily_scan_limit' => (int) env('AI_DAILY_SCAN_LIMIT', 10),
         'daily_chat_limit' => (int) env('AI_DAILY_CHAT_LIMIT', 30),
+        'daily_report_limit' => (int) env('AI_DAILY_REPORT_LIMIT', 3),
         'per_minute_limit' => (int) env('AI_PER_MINUTE_LIMIT', 5),
         'chat_history' => 10,
         'low_confidence' => 0.5,

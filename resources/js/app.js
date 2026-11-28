@@ -9,6 +9,7 @@ import water from './components/water';
 import calculator from './components/calculator';
 import plateDemo from './components/plate-demo';
 import chatDemo from './components/chat-demo';
+import reportInsight from './components/report-insight';
 
 document.documentElement.classList.add('js');
 
@@ -23,6 +24,7 @@ Alpine.data('water', water);
 Alpine.data('calculator', calculator);
 Alpine.data('plateDemo', plateDemo);
 Alpine.data('chatDemo', chatDemo);
+Alpine.data('reportInsight', reportInsight);
 
 Alpine.start();
 initMotion();

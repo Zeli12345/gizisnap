@@ -31,6 +31,125 @@
             <x-stat label="Rata-rata protein" :value="gizi_num($stats['avg_protein'])" unit="g" color="protein" :note="$target ? 'Target '.gizi_num($target->protein_g).' g' : null" />
         </div>
 
+        {{-- Laporan AI: otomatis dibuat saat data berubah, lalu disimpan. --}}
+        <section class="mt-6 overflow-hidden rounded-surface border border-sun/20 bg-paper/90"
+            aria-labelledby="judul-laporan-ai"
+            x-data="reportInsight({ url: '{{ route('reports.ai') }}', period: {{ $period }}, needs: {{ $needs_report ? 'true' : 'false' }} })">
+            <div class="border-b border-ink/8 bg-sun-tint/40 px-5 py-4 sm:px-6">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <span class="grid size-10 shrink-0 place-items-center rounded-full bg-sun text-canvas">
+                            <x-icon name="sparkle" size="19" />
+                        </span>
+                        <div class="min-w-0">
+                            <p class="eyebrow">Analisis AI</p>
+                            <h2 id="judul-laporan-ai" class="title text-[19px]">Laporan {{ $period === 7 ? 'mingguan' : 'bulanan' }}</h2>
+                            <p class="mt-0.5 text-[12.5px] leading-relaxed text-ink-2">Ringkasan otomatis dari catatan {{ $period }} hari terakhir.</p>
+                        </div>
+                    </div>
+                    @if ($report?->generated_at)
+                        <p class="num shrink-0 text-[11.5px] text-ink-3">Diperbarui {{ $report->generated_at->diffForHumans() }}</p>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Sedang menganalisis --}}
+            <div x-show="loading" x-cloak class="px-5 py-6 sm:px-6" role="status">
+                <div class="flex items-center gap-3">
+                    <span class="size-4 shrink-0 animate-spin rounded-full border-2 border-ink/20 border-t-sun" aria-hidden="true"></span>
+                    <div>
+                        <p class="text-[13.5px] font-semibold">AI sedang membaca catatanmu…</p>
+                        <p class="mt-0.5 text-[12px] text-ink-3">Biasanya beberapa detik. Halaman akan diperbarui otomatis.</p>
+                    </div>
+                </div>
+                <div class="mt-5 space-y-2.5" aria-hidden="true">
+                    <div class="h-3 w-2/3 animate-pulse rounded-full bg-sunk"></div>
+                    <div class="h-3 w-full animate-pulse rounded-full bg-sunk"></div>
+                    <div class="h-3 w-5/6 animate-pulse rounded-full bg-sunk"></div>
+                </div>
+            </div>
+
+            {{-- Gagal --}}
+            <div x-show="error" x-cloak class="px-5 py-6 sm:px-6">
+                <div class="flex items-start gap-2.5 text-danger">
+                    <x-icon name="alert" size="17" class="mt-0.5 shrink-0" />
+                    <div>
+                        <p class="text-[13.5px] leading-relaxed" x-text="error"></p>
+                        <button type="button" class="btn btn-quiet btn-sm mt-3" @click="run()" :disabled="loading">
+                            <x-icon name="refresh" size="14" /> Coba lagi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if ($report)
+                @php $content = $report->content ?? []; @endphp
+                <div class="p-5 sm:p-6">
+                    <h3 class="font-display text-[24px] leading-tight font-semibold tracking-[-0.02em]">{{ $content['headline'] ?? 'Laporan pola makanmu' }}</h3>
+                    <p class="mt-2 text-[14px] leading-relaxed text-ink-2">{{ $content['summary'] ?? '' }}</p>
+
+                    @if (! empty($content['changes']))
+                        <div class="mt-5 grid gap-2.5 sm:grid-cols-2">
+                            @foreach ($content['changes'] as $change)
+                                <div class="rounded-control border border-ink/10 bg-sunk/40 p-3.5">
+                                    <p class="text-[12.5px] font-semibold text-sun-ink">{{ $change['title'] }}</p>
+                                    <p class="mt-1 text-[12.5px] leading-relaxed text-ink-2">{{ $change['detail'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if (! empty($content['body']))
+                        <div class="mt-4 rounded-control border border-ink/10 bg-paper px-4 py-3.5">
+                            <p class="text-[11px] font-semibold tracking-[0.05em] text-ink-3 uppercase">Yang mungkin terjadi pada tubuh</p>
+                            <ul class="mt-2 space-y-1.5 text-[13px] leading-relaxed text-ink-2">
+                                @foreach ($content['body'] as $item)
+                                    <li class="flex gap-2">
+                                        <span class="mt-[7px] size-1 shrink-0 rounded-full bg-sun" aria-hidden="true"></span>
+                                        {{ $item }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="mt-4 grid gap-2.5 sm:grid-cols-2">
+                        @if (! empty($content['reduce']))
+                            <div class="rounded-control border border-danger/15 bg-danger-tint/25 p-3.5">
+                                <p class="text-[11px] font-semibold tracking-[0.04em] text-danger uppercase">Kurangi / hindari</p>
+                                <ul class="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-ink-2">
+                                    @foreach ($content['reduce'] as $item)
+                                        <li>• {{ $item }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                        @if (! empty($content['increase']))
+                            <div class="rounded-control border border-pine/15 bg-pine-tint/25 p-3.5">
+                                <p class="text-[11px] font-semibold tracking-[0.04em] text-pine uppercase">Perbanyak / pilih</p>
+                                <ul class="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-ink-2">
+                                    @foreach ($content['increase'] as $item)
+                                        <li>• {{ $item }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+
+                    @if (! empty($content['encouragement']))
+                        <p class="mt-4 flex items-start gap-2 rounded-control bg-sun-tint/40 px-4 py-3 text-[13px] leading-relaxed text-sun-ink">
+                            <x-icon name="sparkle" size="15" class="mt-0.5 shrink-0" />
+                            {{ $content['encouragement'] }}
+                        </p>
+                    @endif
+
+                    <p class="mt-4 border-t border-ink/8 pt-3 text-[11px] leading-relaxed text-ink-3">
+                        Dibuat otomatis oleh AI dari catatanmu. Bukan diagnosis atau pengganti saran dokter/ahli gizi.
+                    </p>
+                </div>
+            @endif
+        </section>
+
         {{-- Grafik kalori: batang CSS. Garis target tepat di angkanya, tidak ada yang bisa salah ukur. --}}
         <section class="panel panel-pad mt-6" aria-labelledby="judul-kalori" data-reveal>
             @php
